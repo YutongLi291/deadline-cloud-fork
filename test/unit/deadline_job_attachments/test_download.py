@@ -2011,7 +2011,7 @@ class TestFullDownload:
         sys.platform != "win32",
         reason="This test is for Windows path only.",
     )
-    def test_windows_long_path_exception_WindowsOS(self):
+    def test_windows_long_path(self):
         mock_s3_client = MagicMock()
         mock_future = MagicMock()
         mock_transfer_manager = MagicMock()
@@ -2045,8 +2045,7 @@ class TestFullDownload:
                     "rootPrefix/Data",
                     mock_s3_client,
                 )
-
-        expected_message = "Your file path is longer than what Windows allow.\nThis could be the error if you do not enable longer file path in Windows"
+        expected_message = "Test exception"
         assert str(exc.value) == expected_message
 
     @mock_aws
@@ -2077,7 +2076,7 @@ class TestFullDownload:
             f"{deadline.__package__}.job_attachments.download.get_s3_transfer_manager",
             return_value=mock_transfer_manager,
         ), patch(
-            f"{deadline.__package__}.job_attachments.download._is_windows_long_path_registry_enabled",
+            f"{deadline.__package__}.job_attachments._utils._is_windows_long_path_registry_enabled",
             return_value=False,
         ), patch(
             f"{deadline.__package__}.job_attachments.download.Path.mkdir"
@@ -2091,8 +2090,7 @@ class TestFullDownload:
                     "rootPrefix/Data",
                     mock_s3_client,
                 )
-
-        expected_message = "Test exception\nUNC notation exist, but long path registry not enabled. Undefined error"
+        expected_message = "Test exception"
         assert str(exc.value) == expected_message
 
     @mock_aws
@@ -2123,7 +2121,7 @@ class TestFullDownload:
             f"{deadline.__package__}.job_attachments.download.get_s3_transfer_manager",
             return_value=mock_transfer_manager,
         ), patch(
-            f"{deadline.__package__}.job_attachments.download._is_windows_long_path_registry_enabled",
+            f"{deadline.__package__}.job_attachments._utils._is_windows_long_path_registry_enabled",
             return_value=True,
         ), patch(
             f"{deadline.__package__}.job_attachments.download.Path.mkdir"
@@ -2421,7 +2419,7 @@ def test_download_files_from_manifests(
 
     assert merged_manifest
 
-    downloaded_files: list[str] = []
+    downloaded_files: List[str] = []
 
     def download_file(*args):
         nonlocal downloaded_files

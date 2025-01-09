@@ -8,6 +8,7 @@ import math
 import os
 from pathlib import Path, WindowsPath
 import sys
+from typing import List
 from click.testing import CliRunner
 from deadline.job_attachments._utils import WINDOWS_MAX_PATH_LENGTH
 import pytest
@@ -155,7 +156,7 @@ class TestManifestSnapshot:
 
         assert result.exit_code == 0, result.output
 
-        files: list[str] = os.listdir(manifest_directory)
+        files: List[str] = os.listdir(manifest_directory)
 
         assert len(files) == 1, f"Expected exactly one manifest file, but got {len(files)}"
 
