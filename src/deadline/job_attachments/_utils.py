@@ -22,6 +22,11 @@ __all__ = [
 ]
 
 
+TEMP_DOWNLOAD_ADDED_CHARS_LENGTH = 9
+
+WINDOWS_MAX_PATH_LENGTH = 260
+
+
 def _join_s3_paths(root: str, *args: str):
     return "/".join([root, *args])
 
@@ -103,6 +108,28 @@ def _is_windows_long_path_registry_enabled() -> bool:
     ntdll.RtlAreLongPathsEnabled.argtypes = ()
 
     return bool(ntdll.RtlAreLongPathsEnabled())
+
+
+def _get_long_path_compatible_path(original_path: Union[str, Path]) -> Path:
+    # Given a Path or string representing a path,
+    # make it long path compatible if needed on Windows and return the Path object
+    # https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+
+    original_path_string = str(original_path)
+    if sys.platform != "win32":
+        return Path(original_path_string)
+
+    # Add 9 to account for .Hex value when file is in the middle of downloading in windows paths
+    # For example: file test.txt when downloaded will become test.txt.H4SD9Ddj
+    if (
+        len(original_path_string) + TEMP_DOWNLOAD_ADDED_CHARS_LENGTH >= WINDOWS_MAX_PATH_LENGTH
+        and not original_path_string.startswith("\\\\?\\")
+        and not _is_windows_long_path_registry_enabled()
+    ):
+        # Prepend \\?\ to the file name to treat it as an UNC path
+
+        return Path("\\\\?\\" + original_path_string)
+    return Path(original_path_string)
 
 
 def _retry(

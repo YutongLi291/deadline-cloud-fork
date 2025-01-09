@@ -39,6 +39,7 @@ from deadline.job_attachments.models import (
     ManifestSnapshot,
     default_glob_all,
 )
+from deadline.job_attachments._utils import _get_long_path_compatible_path
 from deadline.job_attachments.upload import S3AssetManager, S3AssetUploader
 
 """
@@ -174,14 +175,17 @@ def _manifest_snapshot(
         manifest_name = manifest_name[1:] if manifest_name[0] == "_" else manifest_name
         manifest_name = f"{manifest_name}-{root_hash}-{timestamp}.manifest"
 
-        local_manifest_file = os.path.join(destination, manifest_name)
-        os.makedirs(os.path.dirname(local_manifest_file), exist_ok=True)
-        with open(local_manifest_file, "w") as file:
+        local_manifest_file_path: str = str(
+            _get_long_path_compatible_path(os.path.join(destination, manifest_name))
+        )
+
+        os.makedirs(os.path.dirname(local_manifest_file_path), exist_ok=True)
+        with open(local_manifest_file_path, "w") as file:
             file.write(output_manifest.encode())
 
         # Output results.
-        logger.echo(f"Manifest Generated at {local_manifest_file}\n")
-        return ManifestSnapshot(manifest=local_manifest_file)
+        logger.echo(f"Manifest Generated at {local_manifest_file_path}\n")
+        return ManifestSnapshot(manifest=local_manifest_file_path)
     else:
         # No manifest generated.
         logger.echo("No manifest generated")
@@ -296,6 +300,9 @@ def _manifest_upload(
 
     # S3 uploader.
     upload = S3AssetUploader(session=boto_session)
+
+    manifest_file = str(_get_long_path_compatible_path(manifest_file))
+
     with open(manifest_file) as manifest:
         upload.upload_bytes_to_s3(
             bytes=BytesIO(manifest.read().encode("utf-8")),
