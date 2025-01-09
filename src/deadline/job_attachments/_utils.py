@@ -9,7 +9,7 @@ import time
 from typing import Any, Callable, Optional, Tuple, Type, Union
 import uuid
 import sys
-
+import click
 
 __all__ = [
     "_join_s3_paths",
@@ -23,8 +23,22 @@ __all__ = [
 
 
 TEMP_DOWNLOAD_ADDED_CHARS_LENGTH = 9
+"""
+Add 9 to path length to account for .Hex value when file is in the middle of downloading in windows.
+e.g. test.txt when downloaded becomes test.txt.H4SD9Ddj
+"""
 
 WINDOWS_MAX_PATH_LENGTH = 260
+"""
+Windows Max path length limit of 260.
+https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+"""
+
+WINDOWS_UNC_PATH_STRING_PREFIX = "\\\\?\\"
+"""
+When this is prepended to any path on Windows, 
+it becomes a UNC path and is allowed to go over the 260 max path length limit.
+"""
 
 
 def _join_s3_paths(root: str, *args: str):
@@ -110,25 +124,40 @@ def _is_windows_long_path_registry_enabled() -> bool:
     return bool(ntdll.RtlAreLongPathsEnabled())
 
 
-def _get_long_path_compatible_path(original_path: Union[str, Path]) -> Path:
-    # Given a Path or string representing a path,
-    # make it long path compatible if needed on Windows and return the Path object
-    # https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+def _get_long_path_compatible_path(
+    original_path: Union[str, Path], show_long_path_warning: Optional[bool] = False
+) -> Path:
+    """
+    Given a Path or string representing a path,
+    make it long path compatible if needed on Windows and return the Path object
+    https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+
+    :param original_path: Original unmodified path/string representing an absolute path.
+    show
+    :param show_long_path_warning: Whether to show a warning to the user that the resulting path is in a long path.
+    :return: A Path object representing the long path compatible path.
+    """
 
     original_path_string = str(original_path)
     if sys.platform != "win32":
         return Path(original_path_string)
 
-    # Add 9 to account for .Hex value when file is in the middle of downloading in windows paths
-    # For example: file test.txt when downloaded will become test.txt.H4SD9Ddj
     if (
         len(original_path_string) + TEMP_DOWNLOAD_ADDED_CHARS_LENGTH >= WINDOWS_MAX_PATH_LENGTH
-        and not original_path_string.startswith("\\\\?\\")
+        and not original_path_string.startswith(WINDOWS_UNC_PATH_STRING_PREFIX)
         and not _is_windows_long_path_registry_enabled()
     ):
         # Prepend \\?\ to the file name to treat it as an UNC path
 
-        return Path("\\\\?\\" + original_path_string)
+        if show_long_path_warning:
+            # Show warning to make sure customer knows that the resulting file is in a long path
+            click.echo(
+                f"""WARNING: File path {original_path_string} exceeds Windows path length limit. This may cause unexpected issues.
+                For details and a fix using the registry, see: https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+                """,
+                color="yellow",
+            )
+        return Path(WINDOWS_UNC_PATH_STRING_PREFIX + original_path_string)
     return Path(original_path_string)
 
 
