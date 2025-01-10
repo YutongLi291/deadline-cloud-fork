@@ -34,6 +34,7 @@ from deadline.job_attachments.models import (
 )
 from deadline.job_attachments.progress_tracker import SummaryStatistics
 from deadline.job_attachments._utils import (
+    WINDOWS_UNC_PATH_STRING_PREFIX,
     _get_unique_dest_dir_name,
 )
 from .conftest import is_windows_non_admin
@@ -1595,10 +1596,12 @@ def test_download_outputs_windows_long_file_path(
         # THEN
         # The output file should be downloaded to the current directory
         # Prepend \\?\ when checking the file exists, otherwise Python will not find it
-        output_file_path = Path("\\\\?\\" + long_root_path, sync_outputs.step0_task0_output_file)
+        output_file_path = Path(
+            WINDOWS_UNC_PATH_STRING_PREFIX + long_root_path, sync_outputs.step0_task0_output_file
+        )
         assert output_file_path.exists()
         assert (
             len(str(output_file_path)) > 260
         ), f"Expected full output file path to be over the windows path length limit of {WINDOWS_MAX_PATH_LENGTH}, got {len(str(output_file_path))}"
     finally:
-        shutil.rmtree("\\\\?\\" + long_root_path)
+        shutil.rmtree(WINDOWS_UNC_PATH_STRING_PREFIX + long_root_path)

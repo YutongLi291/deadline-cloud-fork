@@ -410,7 +410,7 @@ def download_file(
 
     # Python will handle the path separator '/' correctly on every platform.
     local_file_name: Path = _get_long_path_compatible_path(
-        Path(local_download_dir).joinpath(file.path)
+        Path(local_download_dir).joinpath(file.path), show_long_path_warning=True
     )
 
     s3_key = (

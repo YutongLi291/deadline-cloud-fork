@@ -176,7 +176,9 @@ def _manifest_snapshot(
         manifest_name = f"{manifest_name}-{root_hash}-{timestamp}.manifest"
 
         local_manifest_file_path: str = str(
-            _get_long_path_compatible_path(os.path.join(destination, manifest_name))
+            _get_long_path_compatible_path(
+                os.path.join(destination, manifest_name), show_long_path_warning=True
+            )
         )
 
         os.makedirs(os.path.dirname(local_manifest_file_path), exist_ok=True)
