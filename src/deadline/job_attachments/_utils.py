@@ -151,11 +151,11 @@ def _get_long_path_compatible_path(
 
         if show_long_path_warning:
             # Show warning to make sure customer knows that the resulting file is in a long path
-            click.echo(
+            click.secho(
                 f"""WARNING: File path {original_path_string} exceeds Windows path length limit. This may cause unexpected issues.
                 For details and a fix using the registry, see: https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
                 """,
-                color="yellow",
+                fg="yellow",
             )
         return Path(WINDOWS_UNC_PATH_STRING_PREFIX + original_path_string)
     return Path(original_path_string)
