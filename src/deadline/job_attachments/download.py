@@ -8,6 +8,7 @@ import io
 import json
 import os
 import re
+import sys
 import time
 from collections import defaultdict
 from datetime import datetime
@@ -21,6 +22,7 @@ import boto3
 from boto3.s3.transfer import ProgressCallbackInvoker
 from botocore.client import BaseClient
 from botocore.exceptions import BotoCoreError, ClientError
+import click
 
 from .asset_manifests.base_manifest import BaseAssetManifest, BaseManifestPath as RelativeFilePath
 from .asset_manifests.hash_algorithms import HashAlgorithm
@@ -71,6 +73,7 @@ from .os_file_permission import (
 from ._utils import (
     _get_long_path_compatible_path,
     _is_relative_to,
+    _is_windows_long_path_registry_enabled,
     _join_s3_paths,
 )
 
@@ -410,7 +413,7 @@ def download_file(
 
     # Python will handle the path separator '/' correctly on every platform.
     local_file_name: Path = _get_long_path_compatible_path(
-        Path(local_download_dir).joinpath(file.path), show_long_path_warning=True
+        Path(local_download_dir).joinpath(file.path)
     )
 
     s3_key = (
@@ -1090,13 +1093,34 @@ class OutputDownloader:
             session=session,
         )
 
-    def get_output_paths_by_root(self) -> dict[str, list[str]]:
+    def get_output_paths_by_root(self, is_json: bool = False) -> dict[str, list[str]]:
         """
         Returns a dict of asset root paths to lists of output paths.
         """
         output_paths_by_root: dict[str, list[str]] = {}
+        long_path_file_found = False
+
         for root, path_group in self.outputs_by_root.items():
-            output_paths_by_root[root] = path_group.get_all_paths()
+            all_paths_in_root = path_group.get_all_paths()
+            output_paths_by_root[root] = all_paths_in_root
+            if (
+                not long_path_file_found
+                and sys.platform == "win32"
+                and not _is_windows_long_path_registry_enabled()
+            ):
+                for output_path in all_paths_in_root:
+                    if len(output_path) > WINDOWS_MAX_PATH_LENGTH:
+                        long_path_file_found = True
+                        break
+        if long_path_file_found:
+            if not is_json:
+                click.echo(
+                    """
+                    WARNING: Found downloaded file paths that exceed Windows path length limit. This may cause unexpected issues.
+    For details and a fix using the registry, see: https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+    """
+                )
+
         return output_paths_by_root
 
     def set_root_path(self, original_root: str, new_root: str) -> None:

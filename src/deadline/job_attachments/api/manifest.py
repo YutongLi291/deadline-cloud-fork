@@ -179,7 +179,7 @@ def _manifest_snapshot(
 
         local_manifest_file_path: str = str(
             _get_long_path_compatible_path(
-                os.path.join(destination, manifest_name), show_long_path_warning=True
+                os.path.join(destination, manifest_name),
             )
         )
 

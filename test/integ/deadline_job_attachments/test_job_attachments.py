@@ -1559,7 +1559,7 @@ def test_download_outputs_windows_long_file_path(
     """
 
     tmp_path_len: int = len(str(tmp_path))
-    long_root_path_remaining_length: int = WINDOWS_MAX_PATH_LENGTH - tmp_path_len - 10
+    long_root_path_remaining_length: int = WINDOWS_MAX_PATH_LENGTH - tmp_path_len - 20
     long_root_path: str = os.path.join(
         tmp_path,
         *["path"]
