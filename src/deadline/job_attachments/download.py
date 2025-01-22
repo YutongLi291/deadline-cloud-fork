@@ -1108,17 +1108,19 @@ class OutputDownloader:
                 and sys.platform == "win32"
                 and not _is_windows_long_path_registry_enabled()
             ):
+
                 for output_path in all_paths_in_root:
-                    if len(output_path) > WINDOWS_MAX_PATH_LENGTH:
+                    if len(root + output_path) >= WINDOWS_MAX_PATH_LENGTH:
                         long_path_file_found = True
                         break
         if long_path_file_found:
             if not is_json:
-                click.echo(
+                click.secho(
                     """
-                    WARNING: Found downloaded file paths that exceed Windows path length limit. This may cause unexpected issues.
+    WARNING: Found downloaded file paths that exceed Windows path length limit. This may cause unexpected issues.
     For details and a fix using the registry, see: https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
-    """
+    """,
+                    fg="yellow",
                 )
 
         return output_paths_by_root

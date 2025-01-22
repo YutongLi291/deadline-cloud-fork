@@ -170,7 +170,7 @@ class TestManifestUpload:
             os.path.join(tmp_path_str, "root"), manifest_directory
         )
 
-        assert len(manifest_file) > WINDOWS_MAX_PATH_LENGTH
+        assert len(manifest_file) >= WINDOWS_MAX_PATH_LENGTH
 
         manifest_file_name: str = Path(manifest_file).name
 

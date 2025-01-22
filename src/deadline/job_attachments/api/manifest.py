@@ -201,8 +201,10 @@ def _write_manifest(
     manifest_name = manifest_name[1:] if manifest_name[0] == "_" else manifest_name
     manifest_name = f"{manifest_name}-{root_hash}-{timestamp}.manifest"
 
-    local_manifest_path = _get_long_path_compatible_path(
-        os.path.join(destination, manifest_name),
+    local_manifest_path = str(
+        _get_long_path_compatible_path(
+            os.path.join(destination, manifest_name),
+        )
     )
     os.makedirs(os.path.dirname(local_manifest_path), exist_ok=True)
     with open(local_manifest_path, "w") as file:
